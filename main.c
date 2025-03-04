@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define true 1
 
@@ -63,6 +64,28 @@ void read_input(InputBuffer* input_buffer) {
       input_buffer->buffer[chars_read - 1] = 0;
 }
 
+
+char* to_lower_case(const char* str) {
+    int length = strlen(str) + 1;
+    char* result = (char*)malloc(length * sizeof(char));
+    if (result == NULL) {
+        return NULL;
+    }
+
+    for (int i = 0; i < length - 1; i++) {
+        result[i] = tolower(str[i]);
+    }
+
+    result[length - 1] = '\0';
+    return result;
+}
+
+void free_char(char* str) {
+    if (str != NULL) {
+        free(str);
+    }
+}
+
 MetaCommandExecResult execute_meta_command(InputBuffer* input_buffer) {
     if (strcmp(input_buffer->buffer, "/exit") == 0) {
         close_input_buffer(input_buffer);
@@ -73,15 +96,19 @@ MetaCommandExecResult execute_meta_command(InputBuffer* input_buffer) {
 }
 
 PrepareStatementResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
-        if (strncmp(input_buffer->buffer, "throw in", 8) == 0) {
-        statement->type = STATEMENT_THROW_IN;
+        char* lowercased_statement = to_lower_case(input_buffer->buffer);
+        if (strncmp(lowercased_statement, "throw in", 8) == 0) {
+            statement->type = STATEMENT_THROW_IN;
+            free_char(lowercased_statement);
             return PREPARE_STATEMENT_SUCCESS;
         }
-        if (strncmp(input_buffer->buffer, "grab", 4) == 0) {
+        if (strncmp(lowercased_statement, "grab", 4) == 0) {
             statement->type = STATEMENT_GRAB;
+            free_char(lowercased_statement);
             return PREPARE_STATEMENT_SUCCESS;
         }
 
+        free_char(lowercased_statement);
         return PREPARE_STATEMENT_UNRECOGNIZED;
 }
 
@@ -120,5 +147,8 @@ int main() {
             printf("Unrecognized statement at the start of '%s'\n", input_buffer->buffer);
             continue;
         }
+
+        execute_statement(&statement);
+        printf("Executed.\n");
     }
 }
